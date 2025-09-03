@@ -1,0 +1,61 @@
+﻿@model IEnumerable<FoodCostCalculator.Models.Recipe>
+
+<h1>Recipes</h1>
+
+<a class="btn btn-primary mb-3" asp-action="Create">Create New Recipe</a>
+
+@foreach (var recipe in Model)
+{
+    <div class="card mb-2">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <!-- Nombre de la receta -->
+                <div class="col-md-4">
+                    <strong>@recipe.FinalProduct</strong>
+                </div>
+
+                <!-- Porciones -->
+                <div class="col-md-2">
+                    <label>Portions:</label>
+                    <input type="number" value="@recipe.Portions" step="0.01" class="form-control" />
+                </div>
+
+                <!-- Unidad -->
+                <div class="col-md-2">
+                    <label>Unit:</label>
+                    <select class="form-select">
+                        <option value="g">g</option>
+                        <option value="kg">kg</option>
+                        <option value="portion" selected>portion</option>
+                        <option value="ml">ml</option>
+                        <option value="l">l</option>
+                    </select>
+                </div>
+
+                <!-- Botón mostrar ingredientes -->
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-info btn-sm" onclick="toggleIngredients('ingredients-@recipe.Id')">Show Ingredients</button>
+                </div>
+            </div>
+
+            <!-- Ingredientes ocultos -->
+            <div id="ingredients-@recipe.Id" class="mt-2" style="display:none;">
+                <ul class="list-group">
+                    @foreach (var ri in recipe.Ingredients ?? Enumerable.Empty<FoodCostCalculator.Models.RecipeItem>())
+                    {
+                        <li class="list-group-item">
+                            @ri.Item?.Name - @ri.Quantity @ri.Item?.ConsumptionUnit
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    function toggleIngredients(id) {
+        var el = document.getElementById(id);
+        el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+</script>

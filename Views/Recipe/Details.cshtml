@@ -1,0 +1,13 @@
+﻿@model FoodCostCalculator.Models.Recipe
+
+<h1>@Model.FinalProduct - @Model.Portions portions</h1>
+
+<h3>Ingredients:</h3>
+<ul>
+    @foreach (var ri in Model.Ingredients ?? Enumerable.Empty<FoodCostCalculator.Models.RecipeItem>())
+    {
+        <li>@ri.Item?.Name: @ri.Quantity @ri.Item?.ConsumptionUnit (Channels: @ri.SalesChannels)</li>
+    }
+</ul>
+
+<a class="btn btn-secondary" asp-action="Index">Back to List</a>

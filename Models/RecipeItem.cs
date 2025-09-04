@@ -11,7 +11,7 @@
         // Relationship with Item
         public int ItemId { get; set; }
         public Item? Item { get; set; }
-
+        public string Unit { get; set; } = string.Empty;
         public decimal Quantity { get; set; } // Up to 8 decimals
         public string SalesChannels { get; set; } = string.Empty; // Example: "DineIn,Takeaway,Delivery"
     }

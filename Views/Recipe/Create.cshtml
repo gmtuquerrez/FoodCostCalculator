@@ -1,25 +1,27 @@
-﻿@model FoodCostCalculator.Models.Recipe
+﻿@model FoodCostCalculator.ViewModels.RecipeViewModel
 @{
     ViewData["Title"] = "Configuración de la receta";
     var items = ViewBag.Items as List<FoodCostCalculator.Models.Item>;
 }
 
-<h2 class="mb-3 text-start">Configuración de la receta</h2>
+<h2 class="mb-3 text-start">@ViewData["Title"]</h2>
 
 <form asp-action="Create" method="post">
-    <!-- Nombre del producto/receta -->
-    <div class="mb-3 row">
+    <!-- Producto / Receta -->
+    <div class="mb-3 row align-items-center">
         <label class="col-form-label col-md-2">Producto/Receta:</label>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <input asp-for="FinalProduct" class="form-control" placeholder="Nombre del producto" />
         </div>
+
         <label class="col-form-label col-md-1">Porciones:</label>
-        <div class="col-md-1">
-            <input asp-for="Portions" type="number" class="form-control" step="0.01" />
+        <div class="col-md-2">
+            <input asp-for="Portions" type="number" class="form-control" step="1" />
         </div>
+
         <label class="col-form-label col-md-1">Unidad:</label>
-        <div class="col-md-1">
-            <select class="form-select">
+        <div class="col-md-2">
+            <select asp-for="Unit" class="form-select">
                 <option value="Porcion">Porción</option>
                 <option value="Kg">Kg</option>
                 <option value="Litro">Litro</option>
@@ -27,14 +29,15 @@
         </div>
     </div>
 
+
     <!-- Ingredientes -->
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
-        <h3>Ingredientes</h3>
+        <h3 class="mb-0">Ingredientes</h3>
         <button type="button" class="btn btn-secondary btn-sm" onclick="addIngredient()">Agregar</button>
     </div>
 
     <div id="ingredients-list">
-        <!-- Ingredientes se agregarán dinámicamente -->
+        <!-- Ingredientes se agregan dinámicamente -->
     </div>
 
     <!-- Botones guardar y cancelar -->
@@ -42,69 +45,108 @@
         <button type="submit" class="btn btn-primary me-2">Guardar</button>
         <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
     </div>
+
+    <!-- Modal Costo Total -->
+    <div class="modal fade" id="costModal" tabindex="-1" aria-labelledby="costModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="costModalLabel">Costo total de la receta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="costModalBody">
+                    <!-- Aquí se insertará el detalle dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </form>
 
-<!-- Scripts -->
-<script>
-    var items = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(items));
+@section Scripts {
+    <script>
+        var items = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(items));
 
-    function addIngredient() {
-        var container = document.getElementById('ingredients-list');
-        var index = container.children.length;
+        function addIngredient() {
+            var container = document.getElementById('ingredients-list');
+            var index = container.children.length;
 
-        var html = `
-            <div class="mb-2 d-flex align-items-center" id="ingredient-${index}">
-                <!-- Item select -->
-                <select name="ingredients[${index}].ItemId" class="form-select me-2" style="width: 200px;">
-                    ${items.map(i => `<option value="${i.Id}" data-unit="${i.ConsumptionUnit}">${i.Name}</option>`).join('')}
-                </select>
+            var html = `
+                <div class="mb-2 row align-items-center" id="ingredient-${index}">
+                    <!-- Item select -->
+                    <div class="col-md-4">
+                        <select name="Ingredients[${index}].ItemId" class="form-select" required>
+                            ${items.map(i => `<option value="${i.Id}">${i.Name}</option>`).join('')}
+                        </select>
+                    </div>
 
-                <!-- Quantity input -->
-                <input type="number" step="0.00000001" min="0"
-                       name="ingredients[${index}].Quantity"
-                       class="form-control me-2"
-                       style="width: 120px;"
-                       placeholder="Ej: 0.00015678"/>
+                    <!-- Quantity -->
+                    <div class="col-md-2">
+                        <input type="number" name="Ingredients[${index}].Quantity" class="form-control" step="0.01" placeholder="Cantidad" required />
+                    </div>
 
-                <!-- Unit display -->
-                <input type="text" class="form-control me-2" style="width: 80px;"
-                       value="${items[0]?.ConsumptionUnit || ''}" readonly />
+                    <!-- Unit -->
+                    <div class="col-md-2">
+                        <input type="text" name="Ingredients[${index}].Unit" class="form-control" placeholder="Unidad" readonly value="${items[0]?.ConsumptionUnit || ''}" />
+                    </div>
 
-                <!-- Channels multi-select -->
-                <select name="ingredients[${index}].SalesChannels"
-                        class="selectpicker me-2"
-                        multiple
-                        data-live-search="true"
-                        title="Seleccionar Canales"
-                        style="width: 200px;">
-                    <option value="DineIn">Dine In</option>
-                    <option value="Delivery">Delivery</option>
-                    <option value="Takeaway">Takeaway</option>
-                </select>
+                    <!-- Sales Channels -->
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="Ingredients[${index}].SalesChannels" value="DineIn" id="dinein-${index}">
+                            <label class="form-check-label" for="dinein-${index}">Dine In</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="Ingredients[${index}].SalesChannels" value="Delivery" id="delivery-${index}">
+                            <label class="form-check-label" for="delivery-${index}">Delivery</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="Ingredients[${index}].SalesChannels" value="Takeaway" id="takeaway-${index}">
+                            <label class="form-check-label" for="takeaway-${index}">Takeaway</label>
+                        </div>
+                    </div>
 
-                <!-- Delete button -->
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeIngredient(${index})">Eliminar</button>
-            </div>
-        `;
+                    <!-- Delete button -->
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeIngredient(${index})">Eliminar</button>
+                    </div>
+                </div>
+            `;
 
-        container.insertAdjacentHTML('beforeend', html);
-        $('.selectpicker').selectpicker('refresh');
+            container.insertAdjacentHTML('beforeend', html);
 
-        // Actualizar unidad al cambiar item
-        var itemSelect = document.querySelector(`#ingredient-${index} select[name='ingredients[${index}].ItemId']`);
-        var unitInput = document.querySelector(`#ingredient-${index} input[readonly]`);
-        itemSelect.addEventListener('change', function() {
-            var selected = itemSelect.selectedOptions[0];
-            unitInput.value = selected.getAttribute('data-unit');
-        });
-    }
+            // Actualizar unidad al cambiar el item
+            var selectItem = document.querySelector(`#ingredient-${index} select[name='Ingredients[${index}].ItemId']`);
+            var unitInput = document.querySelector(`#ingredient-${index} input[name='Ingredients[${index}].Unit']`);
+            selectItem.addEventListener('change', function() {
+                var selected = selectItem.selectedOptions[0];
+                unitInput.value = selected ? items.find(i => i.Id == selected.value).ConsumptionUnit : '';
+            });
+        }
 
-    function removeIngredient(index) {
-        var el = document.getElementById(`ingredient-${index}`);
-        if(el) el.remove();
-    }
-</script>
+        function removeIngredient(index) {
+            var el = document.getElementById(`ingredient-${index}`);
+            if (el) el.remove();
+        }
 
-<!-- Bootstrap-Select -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0/dist/css/bootstrap-select.min.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0/dist/js/bootstrap-select.min.js"></script>
+           // Mostrar modal si hay costo calculado
+        @if (ViewBag.CostPerChannel != null)
+        {
+                <text>
+                    var costData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CostPerChannel));
+                    var html = "<ul>";
+                    for (var channel in costData) {
+                        html += `<li>${channel}: $${costData[channel].toFixed(2)}</li>`;
+                    }
+                    html += "</ul>";
+                    document.getElementById('costModalBody').innerHTML = html;
+
+                    var costModal = new bootstrap.Modal(document.getElementById('costModal'));
+                    costModal.show();
+                </text>
+        }
+    </script>
+}
